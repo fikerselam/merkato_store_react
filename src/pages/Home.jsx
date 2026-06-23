@@ -1,114 +1,123 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import ProductCard from "../components/ProductCard";
 
-const featured = [
-  {
-    id: 1,
-    name: "Wireless Headphones",
-    category: "Electronics",
-    description: "High-quality sound with 20-hour battery life.",
-    price: 45.0,
-    image: "/images/product1.jpg",
-  },
-  {
-    id: 2,
-    name: "Cotton Summer Dress",
-    category: "Clothing",
-    description: "Lightweight and breathable fabric, perfect for warm climates.",
-    price: 28.0,
-    image: "/images/product2.jpg",
-  },
-  {
-    id: 3,
-    name: "Ethiopian Organic Coffee",
-    category: "Food & Beverage",
-    description: "Premium single-origin coffee from the highlands of Ethiopia.",
-    price: 12.0,
-    image: "/images/product3.jpg",
-  },
+const CATEGORIES = [
+  "All Products", 
+  "Electronics", 
+  "Clothing", 
+  "Food & Beverage",
+  "Home & Living"
 ];
 
-export default function Home({ addToCart }) {
+export default function Products({ addToCart }) {
+  const [products, setProducts] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("All Products");
+  const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null); // Track network/server errors
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+    
+    fetch(`${apiUrl}/products`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Could not fetch the products data.");
+        return r.json();
+      })
+      .then((data) => {
+        setProducts(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Fetch error:", err);
+        setError(err.message); // Set error state
+        setIsLoading(false);
+      });
+  }, []);
+
+  function handleCategoryClick(cat) { 
+    setActiveCategory(cat); 
+    setSearch(""); 
+  }
+
+  function handleSearchChange(e) { 
+    setSearch(e.target.value);
+    setActiveCategory("All Products"); 
+  }
+
+  const filtered = products.filter((p) => {
+    const matchesCategory = activeCategory === "All Products" || p.category === activeCategory;
+    const term = search.toLowerCase();
+    return matchesCategory && (
+      p.name.toLowerCase().includes(term) ||
+      p.description.toLowerCase().includes(term)
+    );
+  });
+
   return (
-    <div>
-      {/* Hero */}
-      <section
-        className="flex flex-col md:flex-row items-center justify-between gap-8 px-8 py-[60px] text-white"
-        style={{ background: "linear-gradient(135deg, #1f3864 0%, #2e4a80 100%)" }}
-      >
+    <div className="max-w-[1200px] mx-auto px-8 py-8">
+      <div className="flex flex-col md:flex-row gap-8 items-start">
+        
+        {/* Sidebar */}
+        <aside className="w-full md:w-[220px] shrink-0 bg-white border border-[#dddddd] rounded-lg p-4">
+          <h3 className="font-bold text-[#1f3864] text-base mb-4 pb-2 border-b-2 border-[#e8b84b]">
+            Categories
+          </h3>
+          <ul className="space-y-1">
+            {CATEGORIES.map((cat) => (
+              <li key={cat}>
+                <button 
+                  onClick={() => handleCategoryClick(cat)}
+                  className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                    activeCategory === cat 
+                      ? "bg-[#1f3864] text-white" 
+                      : "text-[#222] hover:bg-[#1f3864] hover:text-white"
+                  }`}
+                >
+                  {cat}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        {/* Main Section */}
         <div className="flex-1">
-          <h2 className="text-white text-[40px] font-bold mb-4 leading-tight">
-            Shop the Best Products
-          </h2>
-          <p className="text-[#ccddff] text-lg mb-8">
-            Discover thousands of products delivered across Africa and the Middle East.
-          </p>
-          <Link
-            to="/products"
-            className="inline-block bg-[#1f3864] border-2 border-[#e8b84b] hover:bg-[#e8b84b] hover:text-[#1f3864] text-white font-semibold px-6 py-3 rounded transition-colors"
-          >
-            Shop Now
-          </Link>
-        </div>
-        <div className="flex-1">
-          <img src="/images/banner.jpg" alt="Merkato Store Banner" className="w-full rounded-lg" />
-        </div>
-      </section>
+          <input 
+            type="text" 
+            placeholder="Search products..." 
+            value={search}
+            onChange={handleSearchChange}
+            className="w-full rounded-[24px] border-2 border-[#dddddd] px-4 py-3 text-base focus:outline-none focus:border-[#1f3864] mb-4" 
+          />
 
-      {/* Featured Products */}
-      <section className="px-8 py-8 bg-[#f5f7fa]">
-        <h2 className="text-center text-[24px] font-bold text-[#1f3864] mb-8">Featured Products</h2>
-        <div className="max-w-[1200px] mx-auto flex flex-wrap gap-4 justify-center">
-          {featured.map((p) => (
-            <div key={p.id} className="flex-[1_1_280px] max-w-[320px]">
-              <ProductCard product={p} addToCart={addToCart} />
-            </div>
-          ))}
-        </div>
-      </section>
+          {/* Conditional UI Layers */}
+          {isLoading && (
+            <p className="text-gray-500 text-sm">Loading amazing products...</p>
+          )}
 
-      {/* Promo Video */}
-      <section className="py-12 px-8">
-        <div className="max-w-[720px] mx-auto text-center">
-          <h2 className="text-[24px] font-bold text-[#1f3864] mb-4">See What Merkato Store Offers</h2>
-          <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-            <iframe
-              className="w-full h-full"
-              src="https://www.youtube.com/embed/kuhf-5wyUyc"
-              title="Merkato Store Promo"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      </section>
+          {error && (
+            <p className="text-red-500 text-sm font-medium">
+              ⚠️ {error}. Please try reloading the page or check your connection.
+            </p>
+          )}
 
-      {/* About */}
-      <section className="bg-white py-8 px-8">
-        <div className="max-w-[1200px] mx-auto">
-          <h2 className="text-[24px] font-bold text-[#1f3864] mb-6">About Merkato Store</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-[20px] font-bold text-[#1f3864] mb-3">Why Shop With Us?</h3>
-              <ul className="list-disc list-inside space-y-2 text-[#555]">
-                <li>Wide variety of authentic local and international products</li>
-                <li>Secure and fast delivery across 15+ countries</li>
-                <li>24/7 customer support in English, Arabic, and Amharic</li>
-                <li>Easy returns and buyer protection guarantee</li>
-              </ul>
+          {!isLoading && !error && filtered.length === 0 && (
+            <p className="text-gray-500 text-sm">No products found for "{search}".</p>
+          )}
+
+          {!isLoading && !error && filtered.length > 0 && (
+            <div className="flex flex-wrap gap-4">
+              {filtered.map((p) => (
+                <div key={p.id} className="flex-[1_1_280px] max-w-[320px]">
+                  <ProductCard product={p} addToCart={addToCart} />
+                </div>
+              ))}
             </div>
-            <div>
-              <h3 className="text-[20px] font-bold text-[#1f3864] mb-3">How to Order</h3>
-              <ol className="list-decimal list-inside space-y-2 text-[#555]">
-                <li>Browse products and click <strong>View Product</strong></li>
-                <li>Click <strong>Add to Cart</strong> on the product page</li>
-                <li>Review your cart and click <strong>Checkout</strong></li>
-                <li>Enter delivery details and confirm your order</li>
-              </ol>
-            </div>
-          </div>
+          )}
         </div>
-      </section>
+
+      </div>
     </div>
   );
 }
