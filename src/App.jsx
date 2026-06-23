@@ -6,7 +6,7 @@ import Toast from "./components/Toast";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Contact from "./pages/Contact";
-
+import Login from "./pages/Login";
 export default function App() {
   const [cartCount, setCartCount] = useState(0);
   const [toast, setToast] = useState(null); // { message: string }
@@ -29,6 +29,8 @@ export default function App() {
               element={<Products addToCart={addToCart} />}
             />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+
           </Routes>
         </main>
         <Footer />
